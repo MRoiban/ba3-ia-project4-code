@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "rl2"
+version = "0.2.0"
+description = ""
+authors = ["Yannick Molinghen <yannick.molinghen@ulb.be>","Axel Abels <axel.abels@ulb.be>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+laser-learning-environment = "^0.2.6"
+typing-extensions = "^4.12.2"
+opencv-python = "^4.10.0.84"
+seaborn = "^0.12.2"
+rlenv = { git = "https://github.com/yamoling/rlenv.git", rev = "49dddc532e05e9784094e079bc17e54cd039a192" }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
