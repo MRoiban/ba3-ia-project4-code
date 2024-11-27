@@ -100,10 +100,10 @@ class ValueIteration:
 
     def train(self,  n_updates: int):
         """
-        Train the agent using value iteration for a specified number of updates.
+        Train the agent using value iteration for a specified number of updates
 
         Parameters:
-        - n_updates (int): The total number of updates to perform.
+        - n_updates (int): The total number of updates to perform
         """
         for _ in range(n_updates):
             delta = 0
