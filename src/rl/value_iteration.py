@@ -35,10 +35,6 @@ class ValueIteration:
         reward = self.env.step(action)
         s_prime = self.env.get_observation()
         
-        # Check if we reached the exit (terminal state)
-        if self.env.is_done():
-            reward = 100  # Large reward for reaching the exit
-        
         self.env.step(lle.Action(action).opposite().value)  # Reset to original state
         
         if update:
@@ -58,9 +54,12 @@ class ValueIteration:
                 self.transitions[(state, action)].append([s_prime, 1, 0])
             
             # Update probabilities for all transitions from this state-action pair
-            total_visits = sum(t[1] for t in self.transitions[(state, action)])
+            total_visits = 0
+            for _, visit_count, _ in self.transitions[(state, action)]:
+                total_visits += visit_count
             for transition in self.transitions[(state, action)]:
-                transition[2] = transition[1] / total_visits
+                transition[2] = transition[1] / total_visits  # Update probability
+            
             
             # Learning the Rewards
             if (state, action, s_prime) not in self.rewards:
