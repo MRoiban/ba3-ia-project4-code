@@ -164,10 +164,10 @@ if __name__ == "__main__":
     env = Labyrinth(malfunction_probability = 0.1)
 
     env.reset()
-    env.render()
+    # env.render()
 
     # Uncomment for random moves
-    random_moves(env,10)
+    # random_moves(env,50)
     
     # Uncomment for Value Iteration
     algo = ValueIteration(env=env)
