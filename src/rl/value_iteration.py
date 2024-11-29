@@ -29,6 +29,7 @@ class ValueIteration:
         self.value_table = np.zeros(self.env_size)
         self.rewards = {}
         self.step_count = 0
+        self.state_visits = np.zeros(self.env_size)
         self.transitions = {}
 
 
@@ -116,7 +117,8 @@ class ValueIteration:
             # Randomly sample a valid state and action
             state = self.env.get_valid_states()[random.randint(0, len(self.env.get_valid_states()) - 1)]
             self.env.set_state(state)
-            
+            self.state_visits[state] += 1
+
             action = self.env.get_all_actions()[random.randint(0, len(self.env.get_all_actions()) - 1)]
 
             # Take the action and observe the next state and reward
@@ -164,7 +166,39 @@ class ValueIteration:
             s_prime, probability, reward = self.transition(state, action, True)
             values[action] += probability * (reward + (self.gamma) * self.value_table[s_prime])
         return max(values)
-            
+    
+    def visualize(self, samples: int):
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        # Initialize a 7x7 grid
+        grid_size = 7
+
+        # Plotting the state visit grid and heatmap
+        fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+
+        # State visit grid plot
+        ax[0].imshow(self.state_visits, cmap="Greys", origin="lower")
+        ax[0].set_title("State Visit Grid (7x7)")
+        ax[0].set_xticks(range(grid_size))
+        ax[0].set_yticks(range(grid_size))
+        ax[0].grid(visible=True, color='black', linewidth=0.5)
+        ax[0].set_xlabel("X")
+        ax[0].set_ylabel("Y")
+
+        # Heatmap of state visits
+        heatmap = ax[1].imshow(self.state_visits, cmap="hot", origin="lower")
+        ax[1].set_title("Heatmap of State Visits")
+        ax[1].set_xticks(range(grid_size))
+        ax[1].set_yticks(range(grid_size))
+        ax[1].set_xlabel("X")
+        ax[1].set_ylabel("Y")
+
+        # Add a colorbar to the heatmap
+        plt.colorbar(heatmap, ax=ax[1], orientation='vertical')
+
+        plt.tight_layout()
+        plt.show()
 
     def train(self,  n_updates: int):
         """
@@ -174,6 +208,7 @@ class ValueIteration:
         - n_updates (int): The total number of updates to perform
         """
         self.learn_transitions(1_000_000)
+        self.visualize(1_000_000)
         for _ in range(n_updates):
             delta = 0
             updated_values = np.zeros(self.env_size)
