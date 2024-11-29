@@ -22,23 +22,38 @@ def plot_values(values: NDArray[np.float64]) -> None:
     - None: Displays the plot.
     """
     assert values.ndim == 2, f"Expected 2D array of shape (height, width), got shape {values.shape}"
-    height, width = values.shape
-    
-    # Create the base heatmap
-    # plt.figure(figsize=(8, 8))
-    plt.imshow(values, origin="upper")
-    plt.colorbar(label="State Value")
-    
-    # Overlay the actual values
-    for i in range(height):
-        for j in range(width):
-            plt.text(j, i, f'{values[i, j]:.2f}', 
-                    ha='center', va='center', 
-                    color='black', fontsize=10)
-    
-    plt.title('State Values Heatmap')
-    plt.grid(False)
+    sns.heatmap(values, annot=True, cbar_kws={'label': 'Value'})
     plt.show()
+
+# def plot_values(values: NDArray[np.float64]) -> None:
+#     """
+#     Plots a heatmap representing the state values in a grid world.
+
+#     Parameters:
+#     - values (NDArray[np.float64]): A 2D numpy array of shape (height, width) where each element 
+#                                     represents the computed value of that state.
+
+#     Returns:
+#     - None: Displays the plot.
+#     """
+#     assert values.ndim == 2, f"Expected 2D array of shape (height, width), got shape {values.shape}"
+#     height, width = values.shape
+    
+#     # Create the base heatmap
+#     # plt.figure(figsize=(8, 8))
+#     plt.imshow(values, origin="upper")
+#     plt.colorbar(label="State Value")
+    
+#     # Overlay the actual values
+#     for i in range(height):
+#         for j in range(width):
+#             plt.text(j, i, f'{values[i, j]:.2f}', 
+#                     ha='center', va='center', 
+#                     color='black', fontsize=10)
+    
+#     plt.title('State Values Heatmap')
+#     plt.grid(False)
+#     plt.show()
 
 def plot_qvalues(q_values: NDArray[np.float64], action_symbols: list[str]) -> None:
     """
@@ -155,15 +170,15 @@ if __name__ == "__main__":
     random_moves(env,10)
     
     # Uncomment for Value Iteration
-    # algo = ValueIteration(env=env, gamma=.9)
-    # algo.train(50)
-    # plot_values(algo.get_value_table())
+    algo = ValueIteration(env=env)
+    algo.train(10)
+    plot_values(algo.get_value_table())
 
     # Uncomment for Q-learning
     # algo = QLearning(env=env,alpha=.1,epsilon=.1, gamma=0.9)
-    algo = QLearning(env=env,alpha=.1,c=10, gamma=0.9)
-    algo.train(10_000)
-    plot_qvalues(algo.get_q_table(),action_symbols=Labyrinth.ACTION_SYMBOLS)
+    # algo = QLearning(env=env,alpha=.1,c=10, gamma=0.9)
+    # algo.train(10_000)
+    # plot_qvalues(algo.get_q_table(),action_symbols=Labyrinth.ACTION_SYMBOLS)
 
     # Uncomment for training multiple agents and plotting results
     # results = train_multiple_agents(
