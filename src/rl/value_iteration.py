@@ -24,181 +24,91 @@ class ValueIteration:
         """
         self.env = env
         self.gamma = gamma  
-        self.theta = 0.001
+        self.theta = 0.01
         self.env_size = env.get_map_size()
         self.value_table = np.zeros(self.env_size)
         self.rewards = {}
-        self.step_count = 0
-        self.state_visits = np.zeros(self.env_size)
         self.transitions = {}
 
 
-    # def transition(self, state, action, update=False):
-    #     reward = self.env.step(action)
-    #     s_prime = self.env.get_observation()
-        
-    #     self.env.step(lle.Action(action).opposite().value)  # Reset to original state
-        
-    #     if update:
-    #         # Learning the Transitions
-    #         if (state, action) not in self.transitions:
-    #             self.transitions[(state, action)] = []
-            
-    #         # Update or add new transition
-    #         transition_found = False
-    #         for transition in self.transitions[(state, action)]:
-    #             if transition[0] == s_prime:
-    #                 transition[1] += 1
-    #                 transition_found = True
-    #                 break
-            
-    #         if not transition_found:
-    #             self.transitions[(state, action)].append([s_prime, 1, 0])
-            
-    #         # Update probabilities for all transitions from this state-action pair
-    #         total_visits = 0
-    #         for _, visit_count, _ in self.transitions[(state, action)]:
-    #             total_visits += visit_count
-    #         for transition in self.transitions[(state, action)]:
-    #             transition[2] = transition[1] / total_visits  # Update probability
-            
-            
-    #         # Learning the Rewards
-    #         if (state, action, s_prime) not in self.rewards:
-    #             self.rewards[(state, action, s_prime)] = [0, 0, 0]
-            
-    #         self.rewards[(state, action, s_prime)][0] += reward
-    #         self.rewards[(state, action, s_prime)][1] += 1
-    #         self.rewards[(state, action, s_prime)][2] = (
-    #             self.rewards[(state, action, s_prime)][0] / 
-    #             self.rewards[(state, action, s_prime)][1]
-    #         )
-        
-    #     # Reading Values - Handle case when transition hasn't been seen
-    #     probability = 0
-    #     if (state, action) in self.transitions:
-    #         for transition in self.transitions[(state, action)]:
-    #             if transition[0] == s_prime:
-    #                 probability = transition[2]
-    #                 break
-        
-    #     reward_value = 0
-    #     if (state, action, s_prime) in self.rewards:
-    #         reward_value = self.rewards[(state, action, s_prime)][2]
-    #     else:
-    #         reward_value = reward  # Use immediate reward if no history
+    def transition(self, state, action, s_prime):
+        return self.transitions[state][action][s_prime]
 
-    def transition(self, state, action, update=False):
+
+    def step(self, action, state=None):
+        self.env.set_state(state) if state else ...
         reward = self.env.step(action)
-        s_prime = self.env.get_observation()
-        probability = 0
-        if (state, action) in self.transitions:
-                for transition in self.transitions[(state, action)]:
-                    if transition[0] == s_prime:
-                        probability = transition[2]
-                        break
-            
-        reward_value = 0
-        if (state, action, s_prime) in self.rewards:
-            reward_value = self.rewards[(state, action, s_prime)][2]
-        else:
-            reward_value = reward  # Use immediate reward if no history
-        return s_prime, probability, reward_value
+        is_done = self.env.is_done()
+        return self.env.get_observation(), reward, is_done
 
 
-    def learn_transitions(self, n_samples: int):
-        """
-        Learn the transition function by interacting with the environment.
+    def random_strategy(self, _state):
+        return random.choice(self.env.get_all_actions())
 
-        Parameters:
-        - n_samples (int): The number of state-action pairs to sample and update.
-        """
+    def collect_episodes(self, n_samples, n_steps, exploration_strategy):
+        episodes = []
         for _ in range(n_samples):
-            # Randomly sample a valid state and action
-            state = self.env.get_valid_states()[random.randint(0, len(self.env.get_valid_states()) - 1)]
-            self.env.set_state(state)
-            self.state_visits[state] += 1
-
-            action = self.env.get_all_actions()[random.randint(0, len(self.env.get_all_actions()) - 1)]
-
-            # Take the action and observe the next state and reward
-            reward = self.env.step(action)
-            s_prime = self.env.get_observation()
-
-
-            # Reset the environment to the original state
-            self.env.reset()
-
-            # Update transition counts and probabilities
-            if (state, action) not in self.transitions:
-                self.transitions[(state, action)] = []
-
-            # Update or add new transition
-            transition_found = False
-            for transition in self.transitions[(state, action)]:
-                if transition[0] == s_prime:
-                    transition[1] += 1
-                    transition_found = True
+            episode = []
+            state = self.env.reset()
+            for _ in range(n_steps):
+                action = exploration_strategy(state)
+                s_prime, reward, done = self.step(action)
+                episode.append((state, action, reward, s_prime))
+                state = s_prime
+                if done:
                     break
+            episodes.append(episode)
+        return episodes
 
-            if not transition_found:
-                self.transitions[(state, action)].append([s_prime, 1, 0])
+    def learn(self, n_samples: int, n_steps: int):
+        episodes = self.collect_episodes(n_samples, n_steps, self.random_strategy)
+        states = self.env.get_valid_states() + self.env._world.exit_pos
+        actions = self.env.get_all_actions()
 
-            # Update probabilities for all transitions from this state-action pair
-            total_visits = sum(t[1] for t in self.transitions[(state, action)])
-            for transition in self.transitions[(state, action)]:
-                transition[2] = transition[1] / total_visits  # Update probability
-
-            # Update the reward table
-            if (state, action, s_prime) not in self.rewards:
-                self.rewards[(state, action, s_prime)] = [0, 0, 0]
-
-            self.rewards[(state, action, s_prime)][0] += reward
-            self.rewards[(state, action, s_prime)][1] += 1
-            self.rewards[(state, action, s_prime)][2] = (
-                self.rewards[(state, action, s_prime)][0] / 
-                self.rewards[(state, action, s_prime)][1]
-            )
+        transition_counts = {s: {a: { s_prime: 0 for s_prime in states} for a in actions} for s in states}
+        reward_sums = {s: {a: { s_prime: 0 for s_prime in states} for a in actions} for s in states}
+        
+        for episode in episodes:
+            for (s, a, r ,s_prime) in episode:
+                if s_prime in states:
+                    transition_counts[s][a][s_prime] += 1
+                    reward_sums[s][a][s_prime] += r
+                else:
+                    print(r)
+        
+        self.transitions = {
+            s: {
+                a: {
+                    s_prime: (transition_counts[s][a][s_prime] / sum(transition_counts[s][a].values()))
+                    if sum(transition_counts[s][a].values()) > 0 else 0
+                    for s_prime in states
+                }
+                for a in actions
+            }
+            for s in states
+        }
+        self.rewards = {
+            s: {
+                a: {
+                    s_prime: (reward_sums[s][a][s_prime] / transition_counts[s][a][s_prime])
+                    if transition_counts[s][a][s_prime] > 0 else 0
+                    for s_prime in states
+                }
+                for a in actions
+            }
+            for s in states
+        }
 
     def bellman_equation(self, state) -> float:
-        values = np.zeros(len(self.env.get_all_actions()))
-        for action in self.env.get_all_actions():
-            s_prime, probability, reward = self.transition(state, action, True)
-            values[action] += probability * (reward + (self.gamma) * self.value_table[s_prime])
+        actions = self.env.get_all_actions()
+        values = np.zeros(len(actions))
+        for action in actions:
+            values[action] = sum(self.transitions[state][action][s_prime] * (self.rewards[state][action][s_prime] + (self.gamma * self.value_table[s_prime]))
+                for s_prime in self.env.get_valid_states()+self.env._world.exit_pos
+                )
+        print(values)
         return max(values)
     
-    def visualize(self, samples: int):
-        import matplotlib.pyplot as plt
-        import numpy as np
-
-        # Initialize a 7x7 grid
-        grid_size = 7
-
-        # Plotting the state visit grid and heatmap
-        fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-
-        # State visit grid plot
-        ax[0].imshow(self.state_visits, cmap="Greys", origin="lower")
-        ax[0].set_title("State Visit Grid (7x7)")
-        ax[0].set_xticks(range(grid_size))
-        ax[0].set_yticks(range(grid_size))
-        ax[0].grid(visible=True, color='black', linewidth=0.5)
-        ax[0].set_xlabel("X")
-        ax[0].set_ylabel("Y")
-
-        # Heatmap of state visits
-        heatmap = ax[1].imshow(self.state_visits, cmap="hot", origin="lower")
-        ax[1].set_title("Heatmap of State Visits")
-        ax[1].set_xticks(range(grid_size))
-        ax[1].set_yticks(range(grid_size))
-        ax[1].set_xlabel("X")
-        ax[1].set_ylabel("Y")
-
-        # Add a colorbar to the heatmap
-        plt.colorbar(heatmap, ax=ax[1], orientation='vertical')
-
-        plt.tight_layout()
-        plt.show()
 
     def train(self,  n_updates: int):
         """
@@ -207,21 +117,19 @@ class ValueIteration:
         Parameters:
         - n_updates (int): The total number of updates to perform
         """
-        self.learn_transitions(1_000_000)
-        self.visualize(1_000_000)
+        self.learn(100_000, 2_000)
+        delta = 0
         for _ in range(n_updates):
-            delta = 0
-            updated_values = np.zeros(self.env_size)
-            for state in self.env.get_valid_states():
-                value = self.value_table[state]
-                updated_value = self.bellman_equation(state)
-                updated_values[state] = updated_value
-                delta = max(delta, abs(value - updated_value))
-                self.step_count += 1
-                if delta < self.theta:
-                    break
-            self.value_table = updated_values
+            delta = self.value_iteration(delta)
+            if delta <= self.theta:
+                break
 
+    def value_iteration(self, delta):
+        for state in self.env.get_valid_states()+self.env._world.exit_pos:
+            value = self.value_table[state]
+            self.value_table[state] = self.bellman_equation(state)
+            delta = max(delta, abs(value - self.value_table[state]))
+        return delta
 
 
     def get_value_table(self) -> np.ndarray:
