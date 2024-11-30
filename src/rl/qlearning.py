@@ -48,7 +48,7 @@ class QLearning:
         n_actions = len(self.env.get_all_actions())
         q_table = np.zeros((height, width, n_actions))
         
-        for state in self.env.get_valid_states():
+        for state in self.env.get_valid_states() + self.env._world.exit_pos:
             for action in self.env.get_all_actions():
                 q_table[state[0], state[1], action] = self.q_values[(state, action)]
                 
@@ -58,7 +58,7 @@ class QLearning:
         """
         Initialize Q-values and visit counts tables.
         """
-        for state in self.env.get_valid_states():
+        for state in self.env.get_valid_states() + self.env._world.exit_pos:
             for action in self.env.get_all_actions():
                 self.q_values[(state, action)] = 0.0
                 self.visit_counts[(state, action)] = 0
@@ -69,8 +69,15 @@ class QLearning:
         """
         if np.random.random() < self.epsilon:
             return np.random.choice(self.env.get_all_actions())
-        return max(self.env.get_all_actions(), 
-                  key=lambda a: self.q_values[(current_state, a)])
+        else:
+            best_action = None
+            best_q_value = float('-inf')
+            for action in self.env.get_all_actions():
+                q_value = self.q_values[(current_state, action)]
+                if q_value > best_q_value:
+                    best_q_value = q_value
+                    best_action = action
+            return best_action
 
     def _select_action_exploration_bonus(self, current_state):
         """
