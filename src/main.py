@@ -170,15 +170,15 @@ if __name__ == "__main__":
     # random_moves(env,50)
     
     # Uncomment for Value Iteration
-    algo = ValueIteration(env=env)
-    algo.train(10)
-    plot_values(algo.get_value_table())
+    # algo = ValueIteration(env=env)
+    # algo.train(100)
+    # plot_values(algo.get_value_table())
 
     # Uncomment for Q-learning
-    # algo = QLearning(env=env,alpha=.1,epsilon=.1, gamma=0.9)
-    # algo = QLearning(env=env,alpha=.1,c=10, gamma=0.9)
-    # algo.train(10_000)
-    # plot_qvalues(algo.get_q_table(),action_symbols=Labyrinth.ACTION_SYMBOLS)
+    algo = QLearning(env=env,alpha=.1,epsilon=.1, gamma=0.9)
+    # algo = QLearning(env=env,alpha=.1,c=10000, gamma=0.9)
+    algo.train(1_000_000)
+    plot_qvalues(algo.get_q_table(),action_symbols=Labyrinth.ACTION_SYMBOLS)
 
     # Uncomment for training multiple agents and plotting results
     # results = train_multiple_agents(
